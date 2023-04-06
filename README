@@ -1,0 +1,1 @@
+curl -s https://raw.githubusercontent.com/seivanov1986/environment/master/server/debian-10.12.sh | bash
