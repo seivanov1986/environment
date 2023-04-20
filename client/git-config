@@ -1,0 +1,8 @@
+[alias]
+    co   = "!f() { git checkout PREFIX-"$1"; }; f"
+    cb   = "!f() { git checkout -b PREFIX-"$1" origin/master; }; f"
+    cbc  = "!f() { git checkout -b PREFIX-"$1" origin/BILL-"$2"; }; f"
+    cbcl = "!f() { git checkout -b PREFIX-"$1" PREFIX-"$2"; }; f"
+    cm   = "!f() { git add . ; git commit -m \"\"$(git rev-parse --abbrev-ref HEAD)\" "$@"\" ; }; f"
+    pm   = "!f() { git remote update; git push origin \"$(git rev-parse --abbrev-ref HEAD)\" ; }; f"
+    up   = "!f() { git remote update; git pull origin master ; }; f"
