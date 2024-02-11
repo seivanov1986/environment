@@ -13,6 +13,7 @@
 # save QR code to png file
 # zbarimg ./qrcode.png
 # oathtool --totp -b -d 6 "<OTP from zbarimg output>"
+# osascript ./tunnelblick.osascript
 
 # Parameters($1-$4): VPN_name, account, password, otp_key
 setup() {
@@ -39,11 +40,14 @@ on() {
     # Calculate OTP Code
     OTPCode=$(oathtool --totp -b -d 6 "$OTPKey")
 
+    echo -e $OTPCode
+
     # Set the final 'VPN password + OTP code'
     /usr/bin/security add-generic-password -U -s Tunnelblick-Auth-"$1" -a password -w $Password$OTPCode
 
     # VPN on
-    echo 'Tell app "Tunnelblick" to connect '\"$1\" | osascript
+    # echo 'Tell app "Tunnelblick" to connect '\"$1\" | osascript
+    osascript ./tunnelblick.osascript $1 $OTPCode
 
     echo 'Done.'
 }
