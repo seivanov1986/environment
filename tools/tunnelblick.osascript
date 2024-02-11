@@ -2,10 +2,10 @@ on run argv
     tell application "Tunnelblick"
         connect (item 1 of argv)
         tell application "Tunnelblick" to activate
-            tell application "System Events"
-                    tell process "Tunnelblick" to set value of text field 2 of window "Tunnelblick: Login Required" to (item 2 of argv)
-                    tell process "Tunnelblick" to click button "OK" of window "Tunnelblick: Login Required"
-            end tell
+        tell application "System Events"
+                tell process "Tunnelblick" to set value of text field 2 of window "Tunnelblick: Login Required" to (item 2 of argv)
+                tell process "Tunnelblick" to click button "OK" of window "Tunnelblick: Login Required"
+        end tell
         get state of first configuration where name = (item 1 of argv)
         repeat until result = "CONNECTED"
             delay 1
