@@ -1,1 +1,4 @@
 .idea
+backup/.env
+backup/config.yaml
+backup/config.yaml.old

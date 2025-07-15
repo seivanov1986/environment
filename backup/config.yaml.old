@@ -1,0 +1,24 @@
+hetzner3:
+  - ok1ok
+  - metal
+  - smtp-gateway
+  - voiceit
+  - voiceit-admin
+  - voiceit-client
+  - lswood
+  - alfaprice
+
+alfaprice:
+  - alfaprice
+
+lswood:
+  - lswood
+
+voiceit:
+  - voiceit
+  - voiceit-admin
+  - voiceit-client
+
+gbi:
+  - metal
+  - smtp-gateway
