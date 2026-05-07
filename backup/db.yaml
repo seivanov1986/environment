@@ -1,0 +1,14 @@
+name1:
+  host: remotehost
+  container: go-boilerplate-app-postgres
+  sql: postgres
+  user: pguser
+  database: pgdatabase
+
+name2:
+  host: remotenhost2
+  container: mysql.ddk
+  sql: mysql
+  user: root
+  password: 123456
+  database: skyteh
