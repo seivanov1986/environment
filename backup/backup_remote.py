@@ -1,7 +1,7 @@
 import os
+import time
 import yaml
 import subprocess
-import tempfile
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -15,42 +15,58 @@ CONFIG_PATH = "config.yaml"
 def full_path(path):
     return os.path.join(BASE_PATH, path)
 
-def archive_and_encrypt(path, output_dir, passphrase):
+def stream_backup(server, path, passphrase):
     abs_path = full_path(path)
     base_name = os.path.basename(abs_path.rstrip("/"))
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    tar_path = os.path.join(output_dir, f"{base_name}_{timestamp}.tar.gz")
-    enc_path = tar_path + ".gpg"
+    remote_name = f"{base_name}_{timestamp}.tar.gz.gpg"
 
-    print(f"📦 Архивация: {abs_path} → {tar_path}")
-    subprocess.run(["tar", "-czf", tar_path, abs_path], check=True)
+    print(f"📦🔐📤 {abs_path} → {server}:~/{remote_name}")
 
-    print(f"🔐 Шифрование (симметрично): {tar_path} → {enc_path}")
-    subprocess.run([
-        "gpg", "--symmetric", "--cipher-algo", "AES256",
-        "--batch", "--yes", "--passphrase", passphrase,
-        "--output", enc_path, tar_path
-    ], check=True)
+    tar = subprocess.Popen(
+        ["tar", "-czf", "-", abs_path],
+        stdout=subprocess.PIPE,
+    )
+    gpg = subprocess.Popen(
+        ["gpg", "--symmetric", "--cipher-algo", "AES256",
+         "--batch", "--yes", "--passphrase", passphrase, "--output", "-"],
+        stdin=tar.stdout,
+        stdout=subprocess.PIPE,
+    )
+    tar.stdout.close()
+    ssh = subprocess.Popen(
+        ["ssh", server, f"cat > ~/{remote_name}"],
+        stdin=gpg.stdout,
+    )
+    gpg.stdout.close()
 
-    os.remove(tar_path)
-    return enc_path
+    ssh.wait()
+    gpg.wait()
+    tar.wait()
 
-def send_file(server, file_path):
-    print(f"📤 Отправка на {server}")
-    subprocess.run(["scp", file_path, f"{server}:~/"], check=True)
+    for proc, name in [(tar, "tar"), (gpg, "gpg"), (ssh, "ssh")]:
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, name)
+
+RETRIES = 3
+RETRY_DELAY = 10  # секунд
 
 def main():
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        for server, paths in config.items():
-            for path in paths:
+    for server, paths in config.items():
+        for path in paths:
+            for attempt in range(1, RETRIES + 1):
                 try:
-                    enc_file = archive_and_encrypt(path, tmpdir, passphrase)
-                    send_file(server, enc_file)
+                    stream_backup(server, path, passphrase)
+                    break
                 except subprocess.CalledProcessError as e:
-                    print(f"❌ Ошибка обработки {path}: {e}")
+                    if attempt < RETRIES:
+                        print(f"⚠️  Попытка {attempt}/{RETRIES} не удалась ({path}): {e}. Повтор через {RETRY_DELAY}с...")
+                        time.sleep(RETRY_DELAY)
+                    else:
+                        print(f"❌ Ошибка обработки {path} после {RETRIES} попыток: {e}")
 
 if __name__ == "__main__":
     main()
